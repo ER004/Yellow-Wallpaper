@@ -1,3 +1,4 @@
+import shiffman.box2d.*;
 import processing.pdf.*;
 import processing.video.*;
 
@@ -8,7 +9,9 @@ float spacing = 12; // line height
 float kerning = 0.5; // between letters
 int camX;
 int camY;
-int r = 255, g = 255, b = 255;
+float r = 255, g = 255, b = 255, alpha = 255;
+float rDec = 2, gDec = 2, bDec = 4, aDec = 1.5;
+color c;
 
 boolean fontSizeStatic = false;
 boolean blackAndWhite = false;
@@ -19,7 +22,8 @@ PImage img;
 Capture cam;
 
 void setup() {
-  size(1000,800);
+  //size(1000,800);
+  fullScreen();
   smooth(); 
   colorMode(RGB, 255);
   
@@ -31,76 +35,73 @@ void setup() {
   
   cam.start();
   println(img.width+" x "+img.height);
+  
 }
 
 void draw() {
-  if(!endPhase)
-  {
-    //background(255);
-    background(r, g, b);
-    println(r + " " + g + " " + b);
-    r -= 2;
-    g -= 2;
-    b -= 4;
+  //background(255);
+  background(r, g, b);
+  println(r + " " + g + " " + b + " " + alpha);
+  
+  //decrement colors
+  r -= rDec;
+  g -= gDec;
+  b -= bDec;
+  
+  textAlign(LEFT);
+  //textAlign(LEFT,CENTER); //// also nice!
+
+  float x = 0, y = 10;
+  int counter = 0;
+
+  //loops over something
+  while (y < height) {
+    // translate position (display) to position (image)
+    camX = (int) map(x, 0, width, 0, cam.width);
+    camY = (int) map(y, 0, height, 0, cam.height);
+    // get current color 
+    color oldColor = cam.pixels[camY*cam.width+camX];
+    float red = oldColor >> 16 & 0xFF;
+    float green = oldColor >> 8 & 0xFF;
+    float blue = oldColor & 0xFF;
+    c = color(red, green, blue, alpha);
     
-    if (r <= 0 || g <= 0) endPhase = true;
-    
-    textAlign(LEFT);
-    //textAlign(LEFT,CENTER); //// also nice!
-  
-    float x = 0, y = 10;
-    int counter = 0;
-  
-    //loops over something
-    while (y < height) {
-      // translate position (display) to position (image)
-      camX = (int) map(x, 0, width, 0, cam.width);
-      camY = (int) map(y, 0, height, 0, cam.height);
-      // get current color
-      color c = cam.pixels[camY*cam.width+camX];
-      int greyscale = round(red(c)*0.222 + green(c)*0.707 + blue(c)*0.071);
-  
-      pushMatrix();
-      translate(x, y);
-  
-      if (fontSizeStatic) {
-        textFont(font, fontSizeMax);
-        if (blackAndWhite) fill(greyscale);
-        else fill(c);
-      } 
-      else {
-        // greyscale to fontsize
-        float fontSize = map(greyscale, 0,255, fontSizeMax,fontSizeMin);
-        fontSize = max(fontSize, 1);
-        textFont(font, fontSize);
-        if (blackAndWhite) fill(0);
-        else fill(c);
-      } 
-  
-      char letter = inputText.charAt(counter);
-      text(letter, 0, 0);
-      float letterWidth = textWidth(letter) + kerning;
-      // for the next letter ... x + letter width
-      x = x + letterWidth; // update x-coordinate
-      popMatrix();
-  
-      // linebreaks
-      if (x+letterWidth >= width) {
-        x = 0;
-        y = y + spacing; // add line height
-      }
-  
-      counter++;
-      if (counter > inputText.length()-1) counter = 0;
+    int greyscale = round(red(c)*0.222 + green(c)*0.707 + blue(c)*0.071);
+
+    pushMatrix();
+    translate(x, y);
+
+    if (fontSizeStatic) {
+      textFont(font, fontSizeMax);
+      if (blackAndWhite) fill(greyscale);
+      else fill(c);
+    } 
+    else {
+      // greyscale to fontsize
+      float fontSize = map(greyscale, 0,255, fontSizeMax,fontSizeMin);
+      fontSize = max(fontSize, 1);
+      textFont(font, fontSize);
+      if (blackAndWhite) fill(0);
+      else fill(c);
+    } 
+
+    char letter = inputText.charAt(counter);
+    text(letter, 0, 0);
+    float letterWidth = textWidth(letter) + kerning;
+    // for the next letter ... x + letter width
+    x = x + letterWidth; // update x-coordinate
+    popMatrix();
+
+    // linebreaks
+    if (x+letterWidth >= width) {
+      x = 0;
+      y = y + spacing; // add line height
     }
+
+    counter++;
+    if (counter > inputText.length()-1) counter = 0;
   }
-  
-  if(endPhase)
-  {
-    //make letters fall into a pile
-    background(0);
-    
-  }
+  alpha -= aDec;
 }
 
 
